@@ -1,0 +1,15 @@
+[package]
+name = "collisions"
+version = "0.1.0"
+authors = ["Joseph A Mark <sjeohp@gmail.com>"]
+license = "MIT"
+description = "2d collision detection."
+repository = "https://github.com/sjeohp/rust-collisions.git"
+keywords = ["collision", "collisions", "detection", "2d"]
+
+[dependencies]
+nalgebra = "0.8.2"
+
+[lib]
+name = "collisions"
+path = "src/lib.rs"
