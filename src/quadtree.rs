@@ -2,10 +2,10 @@ extern crate nalgebra;
 
 use nalgebra::{Vector2, Norm};
 
-use collisions::collidable::{Collidable, CollidableShape};
-use collisions::util::*;
+use collidable::{Collidable, CollidableShape};
+use util::*;
 
-pub type Collision = (Collidable, Collidable, usize, Vector2<f32>);
+pub type Collision = (Collidable, Collidable, FaceIndex, SupportPoint);
 
 pub struct Quadtree
 {
@@ -162,7 +162,7 @@ pub fn possible_collision_between(a: &Collidable, b: &Collidable, collisions: &m
 				}
 				CollidableShape::Polygon =>
 				{
-					match dist_poly_circ__face__support(b.nvert, &b.vertx, &b.verty, a.centrex, a.centrey)
+					match dist_poly_circ_with_face_and_supp(b.nvert, &b.vertx, &b.verty, a.centrex, a.centrey)
 					{
 						(d, f, s) =>
 						{
@@ -181,7 +181,7 @@ pub fn possible_collision_between(a: &Collidable, b: &Collidable, collisions: &m
 			{
 				CollidableShape::Circle =>
 				{
-					match dist_poly_circ__face__support(a.nvert, &a.vertx, &a.verty, b.centrex, b.centrey)
+					match dist_poly_circ_with_face_and_supp(a.nvert, &a.vertx, &a.verty, b.centrex, b.centrey)
 					{
 						(d, f, s) =>
 						{
@@ -194,11 +194,11 @@ pub fn possible_collision_between(a: &Collidable, b: &Collidable, collisions: &m
 				}
 				CollidableShape::Polygon =>
 				{
-					match penetration__face__support(a.nvert, &a.vertx, &a.verty, &a.normx, &a.normy, b.nvert, &b.vertx, &b.verty)
+					match penetration(a.nvert, &a.vertx, &a.verty, &a.normx, &a.normy, b.nvert, &b.vertx, &b.verty)
 					{
 						(da, fa, sa) =>
 						{
-							match penetration__face__support(b.nvert, &b.vertx, &b.verty, &b.normx, &b.normy, a.nvert, &a.vertx, &a.verty)
+							match penetration(b.nvert, &b.vertx, &b.verty, &b.normx, &b.normy, a.nvert, &a.vertx, &a.verty)
 							{
 								(db, fb, sb) =>
 								{

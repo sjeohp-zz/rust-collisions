@@ -4,14 +4,7 @@ use nalgebra::{Vector1, Vector2, Rotation2, Rotate};
 
 use std::f32::consts;
 
-use collisions::util::{calc_normx, calc_normy};
-
-pub enum CollidableType
-{
-    Landscape,
-    Actor,
-    Object,
-}
+use util::{calc_normx, calc_normy};
 
 #[derive(Copy, Clone, Debug)]
 pub enum CollidableShape

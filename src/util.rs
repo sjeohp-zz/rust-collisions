@@ -3,6 +3,10 @@ extern crate nalgebra;
 use nalgebra::{Vector2};
 use std::f32;
 
+pub type Distance = f32;
+pub type FaceIndex = usize;
+pub type SupportPoint = Vector2<f32>;
+
 pub fn poly_contains_pnt(nvert: usize, vertx: &[f32], verty: &[f32], pntx: f32, pnty: f32) -> bool
 {
 	let mut j = nvert-1;
@@ -43,7 +47,7 @@ pub fn dist_sqrdf(vx: f32, vy: f32, wx: f32, wy: f32) -> f32
     sqrf(vx - wx) + sqrf(vy - wy)
 }
 
-pub fn dist_line_pnt(lax: f32, lay: f32, lbx: f32, lby: f32, px: f32, py: f32) -> f32
+pub fn dist_line_pnt(lax: f32, lay: f32, lbx: f32, lby: f32, px: f32, py: f32) -> Distance
 {
     let length_sqr = dist_sqrdf(lax, lay, lbx, lby);
     if length_sqr == 0. { return dist_sqrdf(px, py, lax, lay); }
@@ -55,33 +59,33 @@ pub fn dist_line_pnt(lax: f32, lay: f32, lbx: f32, lby: f32, px: f32, py: f32) -
     dist_sqrdf(px, py, cx, cy).sqrt()
 }
 
-pub fn dist_line_pnt__closest_pnt(lax: f32, lay: f32, lbx: f32, lby: f32, px: f32, py: f32) -> (f32, f32, f32)
+pub fn dist_line_pnt_with_supp(lax: f32, lay: f32, lbx: f32, lby: f32, px: f32, py: f32) -> (Distance, SupportPoint)
 {
 	let mut closest_x = px;
 	let mut closest_y = py;
     let length_sqr = dist_sqrdf(lax, lay, lbx, lby);
-    if length_sqr == 0. { return (dist_sqrdf(px, py, lax, lay), closest_x, closest_y); }
+    if length_sqr == 0. { return (dist_sqrdf(px, py, lax, lay), SupportPoint::new(closest_x, closest_y)); }
     let t = ((px - lax) * (lbx - lax) + (py - lay) * (lby - lay)) / length_sqr;
     if t < 0.
 	{
 		closest_x = lax;
 		closest_y = lay;
-        return (dist_sqrdf(px, py, lax, lay).sqrt(), closest_x, closest_y);
+        return (dist_sqrdf(px, py, lax, lay).sqrt(), SupportPoint::new(closest_x, closest_y));
     }
     if t > 1.
 	{
 		closest_x = lbx;
 		closest_y = lby;
-        return (dist_sqrdf(px, py, lbx, lby).sqrt(), closest_x, closest_y);
+        return (dist_sqrdf(px, py, lbx, lby).sqrt(), SupportPoint::new(closest_x, closest_y));
     }
     let cx = lax + t * (lbx - lax);
     let cy = lay + t * (lby - lay);
     closest_x = cx;
 	closest_y = cy;
-    (dist_sqrdf(px, py, cx, cy).sqrt(), closest_x, closest_y)
+    (dist_sqrdf(px, py, cx, cy).sqrt(), SupportPoint::new(closest_x, closest_y))
 }
 
-pub fn dist_poly_circ(nvert: usize, vertx: &[f32], verty: &[f32], circx: f32, circy: f32) -> f32
+pub fn dist_poly_circ(nvert: usize, vertx: &[f32], verty: &[f32], circx: f32, circy: f32) -> Distance
 {
     let mut distance = f32::MAX;
     let mut temp: f32;;
@@ -95,7 +99,7 @@ pub fn dist_poly_circ(nvert: usize, vertx: &[f32], verty: &[f32], circx: f32, ci
     distance
 }
 
-pub fn dist_poly_circ__face__support(nvert: usize, vertx: &[f32], verty: &[f32], circx: f32, circy: f32) -> (f32, usize, Vector2<f32>)
+pub fn dist_poly_circ_with_face_and_supp(nvert: usize, vertx: &[f32], verty: &[f32], circx: f32, circy: f32) -> (Distance, FaceIndex, SupportPoint)
 {
 	let mut closest_x = 0.;
 	let mut closest_y = 0.;
@@ -106,9 +110,9 @@ pub fn dist_poly_circ__face__support(nvert: usize, vertx: &[f32], verty: &[f32],
 	{
 		let cx: f32;
 		let cy: f32;
-        temp = match dist_line_pnt__closest_pnt(vertx[i], verty[i], vertx[i+1], verty[i+1], circx, circy)
+        temp = match dist_line_pnt_with_supp(vertx[i], verty[i], vertx[i+1], verty[i+1], circx, circy)
 		{
-			(d, x, y) =>
+			(d, SupportPoint { x, y }) =>
 			{
 				cx = x;
 				cy = y;
@@ -125,9 +129,9 @@ pub fn dist_poly_circ__face__support(nvert: usize, vertx: &[f32], verty: &[f32],
     }
 	let cx: f32;
 	let cy: f32;
-    temp = match dist_line_pnt__closest_pnt(vertx[nvert-1], verty[nvert-1], vertx[0], verty[0], circx, circy)
+    temp = match dist_line_pnt_with_supp(vertx[nvert-1], verty[nvert-1], vertx[0], verty[0], circx, circy)
 	{
-		(d, x, y) =>
+		(d, SupportPoint { x, y }) =>
 		{
 			cx = x;
 			cy = y;
@@ -141,10 +145,10 @@ pub fn dist_poly_circ__face__support(nvert: usize, vertx: &[f32], verty: &[f32],
 		closest_y = cy;
         face_index = nvert-1;
     }
-    (distance, face_index, Vector2::new(closest_x, closest_y))
+    (distance, face_index, SupportPoint::new(closest_x, closest_y))
 }
 
-pub fn dist_circ_circ(ax: f32, ay: f32, bx: f32, by: f32) -> f32
+pub fn dist_circ_circ(ax: f32, ay: f32, bx: f32, by: f32) -> Distance
 {
     ((ax - bx) * (ax - bx) + (ay - by) * (ay - by)).sqrt()
 }
@@ -171,7 +175,7 @@ pub fn calc_normy(nvert: usize, vertx: &[f32]) -> Vec<f32>
 	normy
 }
 
-pub fn support_pnt(nvert: usize, vertx: &[f32], verty: &[f32], dir: Vector2<f32>) -> Vector2<f32>
+pub fn support_pnt(nvert: usize, vertx: &[f32], verty: &[f32], dir: Vector2<f32>) -> SupportPoint
 {
 	let mut best_proj = f32::MIN;
 	let mut best_vert = nalgebra::zero();
@@ -188,7 +192,7 @@ pub fn support_pnt(nvert: usize, vertx: &[f32], verty: &[f32], dir: Vector2<f32>
 	best_vert
 }
 
-pub fn penetration__face__support(nverta: usize, vertxa: &[f32], vertya: &[f32], normxa: &[f32], normya: &[f32], nvertb: usize, vertxb: &[f32], vertyb: &[f32]) -> (f32, usize, Vector2<f32>)
+pub fn penetration(nverta: usize, vertxa: &[f32], vertya: &[f32], normxa: &[f32], normya: &[f32], nvertb: usize, vertxb: &[f32], vertyb: &[f32]) -> (Distance, FaceIndex, SupportPoint)
 {
     let mut best_dist = f32::MIN;
     let mut best_face = 0;
